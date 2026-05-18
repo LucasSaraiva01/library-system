@@ -1,100 +1,130 @@
 package service;
 
-import entities.Book;
-import entities.Loan;
-import entities.User;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import entities.Book;
+import entities.Loan;
+import entities.User;
+import utils.EmailValidator;
+
 public class LibraryLoanService implements LoanService {
 
-    private List<Book> books = new ArrayList<>();
-    private List<User> users = new ArrayList<>();
-    private List<Loan> loans = new ArrayList<>();
-    private final StorageService storageService;
+	private List<Book> books = new ArrayList<>();
+	private List<User> users = new ArrayList<>();
+	private List<Loan> loans = new ArrayList<>();
+	private final StorageService storageService;
 
-    public LibraryLoanService(StorageService storageService) {
-        this.storageService = storageService;
-    }
+	public LibraryLoanService(StorageService storageService) {
+		this.storageService = storageService;
+	}
 
-    @Override
-    public void addBook(Book book) {
-        books.add(book);
-    }
+	@Override
+	public void addBook(Book book) {
 
-    @Override
-    public void addUser(User user) {
-        users.add(user);
-    }
+		// Verifica se já existe um livro com o mesmo ID
+		boolean exists = books.stream().anyMatch(b -> b.getId().equals(book.getId()));
 
-    @Override
-    public void borrowBook(Integer bookId, Integer userId) {
+		if (exists) {
+			System.out.println("ERRO: Já existe um livro com o ID " + book.getId() + "!");
+			return;
+		}
 
-        Book book = books.stream()
-                .filter(b -> b.getId().equals(bookId))
-                .findFirst()
-                .orElse(null);
+		books.add(book);
+		System.out.println("Livro adicionado com sucesso!");
 
-        User user = users.stream()
-                .filter(u -> u.getId().equals(userId))
-                .findFirst()
-                .orElse(null);
+	}
 
-        if (book == null) {
-            System.out.println("Livro não encontrado!");
-            return;
-        }
-        if (user == null) {
-            System.out.println("Usuário não encontrado!");
-            return;
-        }
-        if (!book.isAvailable()) {
-            System.out.println("Livro não está disponível!");
-            return;
-        }
+	@Override
+	public void addUser(User user) {
+		// Verifica se já existe um usuário com o mesmo ID
+		boolean idExists = users.stream().anyMatch(u -> u.getId().equals(user.getId()));
 
-        book.setAvailable(false);
-        int loanId = loans.size() + 1;
-        loans.add(new Loan(loanId, book, user, LocalDate.now()));
-        System.out.println("Empréstimo realizado com sucesso!");
-    }
+		if (idExists) {
+			System.out.println("ERRO: Já existe um usuário com o ID " + user.getId() + "!");
+			return;
+		}
 
-    @Override
-    public void returnBook(Integer loanId) {
+		// Verifica se já existe um usuário com o mesmo email
+		boolean emailExists = users.stream().anyMatch(u -> u.getEmail().equalsIgnoreCase(user.getEmail()));
 
-        Loan loan = loans.stream()
-                .filter(l -> l.getId().equals(loanId))
-                .findFirst()
-                .orElse(null);
+		if (emailExists) {
+			System.out.println("ERRO: Já existe um usuário com o email " + user.getEmail() + "!");
+			return;
+		}
 
-        if (loan == null) {
-            System.out.println("Empréstimo não encontrado!");
-            return;
-        }
-        if (loan.getReturnDate() != null) {
-            System.out.println("Livro já foi devolvido!");
-            return;
-        }
+		// Valida o formato do email
+		if (!EmailValidator.isValid(user.getEmail())) {
+			System.out.println("ERRO: Email inválido! O email deve conter @ e um domínio válido.");
+			System.out.println("      Exemplo: usuario@dominio.com");
+			return;
+		}
 
-        loan.getBook().setAvailable(true);
-        loan.setReturnDate(LocalDate.now());
-        System.out.println("Devolução realizada com sucesso!");
-    }
+		users.add(user);
+		System.out.println("Usuário adicionado com sucesso!");
+	}
 
-    @Override
-    public List<Book> listAvailableBooks() {
-        List<Book> available = books.stream()
-                .filter(Book::isAvailable)
-                .collect(java.util.stream.Collectors.toList());
-        Collections.sort(available);
-        return available;
-    }
+	@Override
+	public void borrowBook(Integer bookId, Integer userId) {
 
-    @Override
-    public List<Loan> listAllLoans() {
-        return loans;
-    }
+		Book book = books.stream().filter(b -> b.getId().equals(bookId)).findFirst().orElse(null);
+
+		User user = users.stream().filter(u -> u.getId().equals(userId)).findFirst().orElse(null);
+
+		if (book == null) {
+			System.out.println("Livro não encontrado!");
+			return;
+		}
+		if (user == null) {
+			System.out.println("Usuário não encontrado!");
+			return;
+		}
+		if (!book.isAvailable()) {
+			System.out.println("Livro não está disponível!");
+			return;
+		}
+
+		book.setAvailable(false);
+		int loanId = loans.size() + 1;
+		loans.add(new Loan(loanId, book, user, LocalDate.now()));
+		System.out.println("Empréstimo realizado com sucesso!");
+	}
+
+	@Override
+	public void returnBook(Integer loanId) {
+
+		Loan loan = loans.stream().filter(l -> l.getId().equals(loanId)).findFirst().orElse(null);
+
+		if (loan == null) {
+			System.out.println("Empréstimo não encontrado!");
+			return;
+		}
+		if (loan.getReturnDate() != null) {
+			System.out.println("Livro já foi devolvido!");
+			return;
+		}
+
+		loan.getBook().setAvailable(true);
+		loan.setReturnDate(LocalDate.now());
+		System.out.println("Devolução realizada com sucesso!");
+	}
+
+	@Override
+	public List<Book> listAvailableBooks() {
+		List<Book> available = books.stream().filter(Book::isAvailable).collect(java.util.stream.Collectors.toList());
+		Collections.sort(available);
+		return available;
+	}
+
+	@Override
+	public List<Loan> listAllLoans() {
+		return loans;
+	}
+	
+	@Override
+	public List<Book> listAllBooks() {
+	    return books;
+	}
 }

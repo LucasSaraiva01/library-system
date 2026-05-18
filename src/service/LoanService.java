@@ -14,4 +14,5 @@ public interface LoanService {
     void returnBook(Integer loanId);
     List<Book> listAvailableBooks();
     List<Loan> listAllLoans();
+    List<Book> listAllBooks();
 }
