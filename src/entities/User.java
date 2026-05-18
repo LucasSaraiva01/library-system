@@ -24,4 +24,8 @@ public class User {
 		return email;
 	}
 	
+	@Override
+    public String toString() {
+        return String.format("[%d] %s - %s", id, name, email);
+    }
 }
