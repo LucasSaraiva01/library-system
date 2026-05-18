@@ -36,6 +36,7 @@ public class CsvStorageService implements StorageService {
                           l.getBook().getId() + "," +
                           l.getUser().getId() + "," +
                           l.getLoanDate() + "," +
+                          l.getExpectedReturnDate() + "," +  // NOVO
                           (l.getReturnDate() != null ? l.getReturnDate() : "null"))
                 .toList();
         try {
@@ -110,35 +111,34 @@ public class CsvStorageService implements StorageService {
                 // fields[1] = bookId
                 // fields[2] = userId
                 // fields[3] = loanDate
-                // fields[4] = returnDate (pode ser "null")
+                // fields[4] = expectedReturnDate  (NOVO)
+                // fields[5] = returnDate
                 
                 int loanId = Integer.parseInt(fields[0]);
                 int bookId = Integer.parseInt(fields[1]);
                 int userId = Integer.parseInt(fields[2]);
                 LocalDate loanDate = LocalDate.parse(fields[3]);
+                LocalDate expectedReturnDate = LocalDate.parse(fields[4]);  // NOVO
                 
-                // Busca o livro correspondente pelo ID
                 Book book = books.stream()
                         .filter(b -> b.getId().equals(bookId))
                         .findFirst()
                         .orElse(null);
                 
-                // Busca o usuário correspondente pelo ID
                 User user = users.stream()
                         .filter(u -> u.getId().equals(userId))
                         .findFirst()
                         .orElse(null);
                 
                 if (book != null && user != null) {
-                    Loan loan = new Loan(loanId, book, user, loanDate);
-                    
-                    // Se tem data de devolução (não é "null"), preenche
-                    if (!fields[4].equals("null")) {
-                        LocalDate returnDate = LocalDate.parse(fields[4]);
-                        loan.setReturnDate(returnDate);
+                    LocalDate returnDate = null;
+                    if (!fields[5].equals("null")) {
+                        returnDate = LocalDate.parse(fields[5]);
                     }
                     
-                    // Se o livro foi emprestado, marca como indisponível
+                    Loan loan = new Loan(loanId, book, user, loanDate, expectedReturnDate, returnDate);
+                    
+                    // Se o livro foi emprestado e não devolvido, marca como indisponível
                     if (loan.getReturnDate() == null) {
                         book.setAvailable(false);
                     }

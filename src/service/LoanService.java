@@ -18,4 +18,5 @@ public interface LoanService {
     List<Loan> listAllLoans();
     List<Book> listAllBooks();
     List<User> listAllUsers();
+    List<Loan> listOverdueLoans();
 }

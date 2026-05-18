@@ -150,4 +150,11 @@ public class LibraryLoanService implements LoanService {
 	public void addLoan(Loan loan) {
 	    loans.add(loan);
 	}
+	
+	@Override
+	public List<Loan> listOverdueLoans() {
+	    return loans.stream()
+	            .filter(Loan::isOverdue)
+	            .collect(java.util.stream.Collectors.toList());
+	}
 }
