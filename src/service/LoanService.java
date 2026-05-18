@@ -12,7 +12,7 @@ public interface LoanService {
 	void addUser(User user);
     void borrowBook(Integer bookId, Integer userId);
     void returnBook(Integer loanId);
-    
+    void addLoan(Loan loan);  // NOVO
     
     List<Book> listAvailableBooks();
     List<Loan> listAllLoans();

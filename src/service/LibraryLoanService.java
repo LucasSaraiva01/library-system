@@ -69,27 +69,40 @@ public class LibraryLoanService implements LoanService {
 	@Override
 	public void borrowBook(Integer bookId, Integer userId) {
 
-		Book book = books.stream().filter(b -> b.getId().equals(bookId)).findFirst().orElse(null);
+	    Book book = books.stream()
+	            .filter(b -> b.getId().equals(bookId))
+	            .findFirst()
+	            .orElse(null);
 
-		User user = users.stream().filter(u -> u.getId().equals(userId)).findFirst().orElse(null);
+	    User user = users.stream()
+	            .filter(u -> u.getId().equals(userId))
+	            .findFirst()
+	            .orElse(null);
 
-		if (book == null) {
-			System.out.println("Livro não encontrado!");
-			return;
-		}
-		if (user == null) {
-			System.out.println("Usuário não encontrado!");
-			return;
-		}
-		if (!book.isAvailable()) {
-			System.out.println("Livro não está disponível!");
-			return;
-		}
+	    if (book == null) {
+	        System.out.println("Livro não encontrado!");
+	        return;
+	    }
+	    if (user == null) {
+	        System.out.println("Usuário não encontrado!");
+	        return;
+	    }
+	    if (!book.isAvailable()) {
+	        System.out.println("Livro não está disponível!");
+	        return;
+	    }
 
-		book.setAvailable(false);
-		int loanId = loans.size() + 1;
-		loans.add(new Loan(loanId, book, user, LocalDate.now()));
-		System.out.println("Empréstimo realizado com sucesso!");
+	    book.setAvailable(false);
+	    
+	    // Gera ID baseado no maior ID existente + 1
+	    int maxId = loans.stream()
+	            .mapToInt(Loan::getId)
+	            .max()
+	            .orElse(0);
+	    int loanId = maxId + 1;
+	    
+	    loans.add(new Loan(loanId, book, user, LocalDate.now()));
+	    System.out.println("Empréstimo realizado com sucesso!");
 	}
 
 	@Override
@@ -131,5 +144,10 @@ public class LibraryLoanService implements LoanService {
 	@Override
 	public List<User> listAllUsers() {
 	    return users;
+	}
+	
+	@Override
+	public void addLoan(Loan loan) {
+	    loans.add(loan);
 	}
 }

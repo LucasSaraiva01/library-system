@@ -19,10 +19,15 @@ public class Program {
         Locale.setDefault(Locale.US);
 
         StorageService storageService = new CsvStorageService();
-        LoanService loanService = new LibraryLoanService(storageService);
-
+        
         // Carrega livros salvos anteriormente
         List<Book> loadedBooks = storageService.loadBooks();
+        List<User> loadedUsers = storageService.loadUsers();
+        
+        // Cria o serviço com os dados carregados
+        LoanService loanService = new LibraryLoanService(storageService);
+        
+        // Adiciona livros ao serviço
         if (loadedBooks.isEmpty()) {
             System.out.println("Nenhum livro encontrado. Adicionando livros de exemplo...");
             loanService.addBook(new Book(1, "O Senhor dos Anéis", "J.R.R. Tolkien", true));
@@ -37,8 +42,7 @@ public class Program {
             System.out.println("Carregados " + loadedBooks.size() + " livros do arquivo.");
         }
         
-        // Carrega usuários salvos anteriormente
-        List<User> loadedUsers = storageService.loadUsers();
+        // Adiciona usuários ao serviço
         if (loadedUsers.isEmpty()) {
             System.out.println("Nenhum usuário encontrado. Adicionando usuários de exemplo...");
             loanService.addUser(new User(1, "João Silva", "joao@email.com"));
@@ -50,10 +54,21 @@ public class Program {
             loadedUsers.forEach(loanService::addUser);
             System.out.println("Carregados " + loadedUsers.size() + " usuários do arquivo.");
         }
+        
+        
+     // Carrega empréstimos salvos (precisa das listas já carregadas)
+        List<Loan> loadedLoans = storageService.loadLoans(loanService.listAllBooks(), loanService.listAllUsers());
+        if (loadedLoans.isEmpty()) {
+            System.out.println("Nenhum empréstimo encontrado.");
+        } else {
+            for (Loan loan : loadedLoans) {
+                loanService.addLoan(loan);
+            }
+            System.out.println("Carregados " + loadedLoans.size() + " empréstimos do arquivo.");
+        }
 
         try (Scanner sc = new Scanner(System.in)) {
-
-            int option = -1;
+        	int option = -1;
 
             while (option != 0) {
 
@@ -164,5 +179,5 @@ public class Program {
                 }
             }
         }
+        }
     }
-}

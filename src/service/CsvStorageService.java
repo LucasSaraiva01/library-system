@@ -3,6 +3,7 @@ package service;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -98,7 +99,56 @@ public class CsvStorageService implements StorageService {
     }
 
     @Override
-    public List<Loan> loadLoans() {
-        return new ArrayList<>();
+    public List<Loan> loadLoans(List<Book> books, List<User> users) {
+        List<Loan> loans = new ArrayList<>();
+        if (!Files.exists(loansPath)) return loans;
+        
+        try {
+            Files.lines(loansPath).forEach(line -> {
+                String[] fields = line.split(",");
+                // fields[0] = loanId
+                // fields[1] = bookId
+                // fields[2] = userId
+                // fields[3] = loanDate
+                // fields[4] = returnDate (pode ser "null")
+                
+                int loanId = Integer.parseInt(fields[0]);
+                int bookId = Integer.parseInt(fields[1]);
+                int userId = Integer.parseInt(fields[2]);
+                LocalDate loanDate = LocalDate.parse(fields[3]);
+                
+                // Busca o livro correspondente pelo ID
+                Book book = books.stream()
+                        .filter(b -> b.getId().equals(bookId))
+                        .findFirst()
+                        .orElse(null);
+                
+                // Busca o usuário correspondente pelo ID
+                User user = users.stream()
+                        .filter(u -> u.getId().equals(userId))
+                        .findFirst()
+                        .orElse(null);
+                
+                if (book != null && user != null) {
+                    Loan loan = new Loan(loanId, book, user, loanDate);
+                    
+                    // Se tem data de devolução (não é "null"), preenche
+                    if (!fields[4].equals("null")) {
+                        LocalDate returnDate = LocalDate.parse(fields[4]);
+                        loan.setReturnDate(returnDate);
+                    }
+                    
+                    // Se o livro foi emprestado, marca como indisponível
+                    if (loan.getReturnDate() == null) {
+                        book.setAvailable(false);
+                    }
+                    
+                    loans.add(loan);
+                }
+            });
+        } catch (IOException e) {
+            System.out.println("Erro ao carregar empréstimos: " + e.getMessage());
+        }
+        return loans;
     }
 }

@@ -13,6 +13,6 @@ public interface StorageService {
     void saveUsers(List<User> users);
     
     List<Book> loadBooks();
-    List<Loan> loadLoans();
+    List<Loan> loadLoans(List<Book> books, List<User> users);  // MODIFICADO
     List<User> loadUsers();
 }
