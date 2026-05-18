@@ -24,15 +24,12 @@ public class Program {
         // Carrega livros salvos anteriormente
         List<Book> loadedBooks = storageService.loadBooks();
         if (loadedBooks.isEmpty()) {
-            // Se não há livros, adiciona dados de exemplo
             System.out.println("Nenhum livro encontrado. Adicionando livros de exemplo...");
             loanService.addBook(new Book(1, "O Senhor dos Anéis", "J.R.R. Tolkien", true));
             loanService.addBook(new Book(2, "1984", "George Orwell", true));
             loanService.addBook(new Book(3, "Dom Casmurro", "Machado de Assis", true));
             loanService.addBook(new Book(4, "O Pequeno Príncipe", "Antoine de Saint-Exupéry", true));
             loanService.addBook(new Book(5, "A Culpa é das Estrelas", "John Green", true));
-            
-            // Salva os livros de exemplo no CSV
             storageService.saveBooks(loanService.listAllBooks());
             System.out.println("5 livros de exemplo adicionados com sucesso!");
         } else {
@@ -41,15 +38,17 @@ public class Program {
         }
         
         // Carrega usuários salvos anteriormente
-        // TODO: Implementar loadUsers() - por enquanto adiciona usuários de exemplo
-        List<User> existingUsers = List.of(); // Placeholder
-        
-        if (existingUsers.isEmpty()) {
-            System.out.println("Adicionando usuários de exemplo...");
+        List<User> loadedUsers = storageService.loadUsers();
+        if (loadedUsers.isEmpty()) {
+            System.out.println("Nenhum usuário encontrado. Adicionando usuários de exemplo...");
             loanService.addUser(new User(1, "João Silva", "joao@email.com"));
             loanService.addUser(new User(2, "Maria Santos", "maria@email.com"));
             loanService.addUser(new User(3, "Pedro Oliveira", "pedro@email.com"));
+            storageService.saveUsers(loanService.listAllUsers());
             System.out.println("3 usuários de exemplo adicionados com sucesso!");
+        } else {
+            loadedUsers.forEach(loanService::addUser);
+            System.out.println("Carregados " + loadedUsers.size() + " usuários do arquivo.");
         }
 
         try (Scanner sc = new Scanner(System.in)) {
@@ -65,7 +64,8 @@ public class Program {
                 System.out.println("4. Realizar devolução");
                 System.out.println("5. Listar livros disponíveis");
                 System.out.println("6. Listar todos os empréstimos");
-                System.out.println("7. Listar todos os livros (inclui indisponíveis)"); // NOVO
+                System.out.println("7. Listar todos os livros");
+                System.out.println("8. Listar todos os usuários");  // NOVO
                 System.out.println("0. Sair");
                 System.out.print("Opção: ");
                 option = sc.nextInt();
@@ -95,7 +95,7 @@ public class Program {
                         System.out.print("Email: ");
                         String email = sc.nextLine();
                         loanService.addUser(new User(id, name, email));
-                        // TODO: Salvar usuários no CSV
+                        storageService.saveUsers(loanService.listAllUsers());  // NOVO: salva após cadastrar
                     }
 
                     case 3 -> {
@@ -145,6 +145,16 @@ public class Program {
                         } else {
                             System.out.println("\n=== TODOS OS LIVROS ===");
                             allBooks.forEach(System.out::println);
+                        }
+                    }
+                    
+                    case 8 -> {  // NOVO: Listar todos os usuários
+                        List<User> allUsers = loanService.listAllUsers();
+                        if (allUsers.isEmpty()) {
+                            System.out.println("Nenhum usuário cadastrado.");
+                        } else {
+                            System.out.println("\n=== TODOS OS USUÁRIOS ===");
+                            allUsers.forEach(System.out::println);
                         }
                     }
 

@@ -12,7 +12,10 @@ public interface LoanService {
 	void addUser(User user);
     void borrowBook(Integer bookId, Integer userId);
     void returnBook(Integer loanId);
+    
+    
     List<Book> listAvailableBooks();
     List<Loan> listAllLoans();
     List<Book> listAllBooks();
+    List<User> listAllUsers();
 }

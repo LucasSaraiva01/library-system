@@ -127,4 +127,9 @@ public class LibraryLoanService implements LoanService {
 	public List<Book> listAllBooks() {
 	    return books;
 	}
+	
+	@Override
+	public List<User> listAllUsers() {
+	    return users;
+	}
 }

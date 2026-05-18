@@ -1,20 +1,20 @@
 package service;
 
-import entities.Book;
-import entities.Loan;
-import entities.User;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
+import entities.Book;
+import entities.Loan;
+import entities.User;
 
 public class CsvStorageService implements StorageService {
 
     private final Path booksPath = Path.of("books.csv");
     private final Path loansPath = Path.of("loans.csv");
+    private final Path usersPath = Path.of("users.csv");  // NOVO
 
     @Override
     public void saveBooks(List<Book> books) {
@@ -43,6 +43,19 @@ public class CsvStorageService implements StorageService {
             System.out.println("Erro ao salvar empréstimos: " + e.getMessage());
         }
     }
+    
+ // NOVO: Salvar usuários
+    @Override
+    public void saveUsers(List<User> users) {
+        List<String> lines = users.stream()
+                .map(u -> u.getId() + "," + u.getName() + "," + u.getEmail())
+                .toList();
+        try {
+            Files.write(usersPath, lines);
+        } catch (IOException e) {
+            System.out.println("Erro ao salvar usuários: " + e.getMessage());
+        }
+    }
 
     @Override
     public List<Book> loadBooks() {
@@ -62,6 +75,26 @@ public class CsvStorageService implements StorageService {
             System.out.println("Erro ao carregar livros: " + e.getMessage());
         }
         return books;
+    }
+    
+ // NOVO: Carregar usuários
+    @Override
+    public List<User> loadUsers() {
+        List<User> users = new ArrayList<>();
+        if (!Files.exists(usersPath)) return users;
+        try {
+            Files.lines(usersPath).forEach(line -> {
+                String[] fields = line.split(",");
+                users.add(new User(
+                        Integer.parseInt(fields[0]),
+                        fields[1],
+                        fields[2]
+                ));
+            });
+        } catch (IOException e) {
+            System.out.println("Erro ao carregar usuários: " + e.getMessage());
+        }
+        return users;
     }
 
     @Override
