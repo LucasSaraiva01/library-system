@@ -1,0 +1,35 @@
+# Java compiled files
+*.class
+*.jar
+*.war
+*.ear
+
+# CSV data files (created by the program)
+*.csv
+
+# Eclipse IDE
+.classpath
+.project
+.settings/
+bin/
+.metadata/
+
+# VS Code IDE
+.vscode/
+*.code-workspace
+
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temp files
+*~
+*.tmp
