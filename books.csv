@@ -1,5 +1,6 @@
-1,O Senhor dos Anéis,J.R.R. Tolkien,true
-2,1984,George Orwell,false
-3,Dom Casmurro,Machado de Assis,false
-4,O Pequeno Príncipe,Antoine de Saint-Exupéry,true
-5,A Culpa é das Estrelas,John Green,true
+1,O Senhor dos Anéis,J.R.R. Tolkien,Fantasia,true
+2,1984,George Orwell,Ficção Científica,false
+3,Dom Casmurro,Machado de Assis,Literatura Brasileira,false
+4,O Pequeno Príncipe,Antoine de Saint-Exupéry,Infantil,true
+5,A Culpa é das Estrelas,John Green,Romance,true
+6,eu,lucas,romance,true

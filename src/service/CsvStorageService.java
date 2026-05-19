@@ -15,12 +15,16 @@ public class CsvStorageService implements StorageService {
 
     private final Path booksPath = Path.of("books.csv");
     private final Path loansPath = Path.of("loans.csv");
-    private final Path usersPath = Path.of("users.csv");  // NOVO
+    private final Path usersPath = Path.of("users.csv");
 
     @Override
     public void saveBooks(List<Book> books) {
         List<String> lines = books.stream()
-                .map(b -> b.getId() + "," + b.getTitle() + "," + b.getAuthor() + "," + b.isAvailable())
+                .map(b -> b.getId() + "," + 
+                          b.getTitle() + "," + 
+                          b.getAuthor() + "," + 
+                          b.getGenre() + "," +  // NOVO
+                          b.isAvailable())
                 .toList();
         try {
             Files.write(booksPath, lines);
@@ -36,7 +40,7 @@ public class CsvStorageService implements StorageService {
                           l.getBook().getId() + "," +
                           l.getUser().getId() + "," +
                           l.getLoanDate() + "," +
-                          l.getExpectedReturnDate() + "," +  // NOVO
+                          l.getExpectedReturnDate() + "," +
                           (l.getReturnDate() != null ? l.getReturnDate() : "null"))
                 .toList();
         try {
@@ -66,11 +70,17 @@ public class CsvStorageService implements StorageService {
         try {
             Files.lines(booksPath).forEach(line -> {
                 String[] fields = line.split(",");
+                // fields[0] = id
+                // fields[1] = title
+                // fields[2] = author
+                // fields[3] = genre (NOVO)
+                // fields[4] = available
                 books.add(new Book(
                         Integer.parseInt(fields[0]),
                         fields[1],
                         fields[2],
-                        Boolean.parseBoolean(fields[3])
+                        fields[3],  // NOVO
+                        Boolean.parseBoolean(fields[4])
                 ));
             });
         } catch (IOException e) {

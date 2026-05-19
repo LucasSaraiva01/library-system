@@ -37,14 +37,14 @@ public class Program {
 
 		// Adiciona livros ao serviço
 		if (loadedBooks.isEmpty()) {
-			System.out.println("Nenhum livro encontrado. Adicionando livros de exemplo...");
-			loanService.addBook(new Book(1, "O Senhor dos Anéis", "J.R.R. Tolkien", true));
-			loanService.addBook(new Book(2, "1984", "George Orwell", true));
-			loanService.addBook(new Book(3, "Dom Casmurro", "Machado de Assis", true));
-			loanService.addBook(new Book(4, "O Pequeno Príncipe", "Antoine de Saint-Exupéry", true));
-			loanService.addBook(new Book(5, "A Culpa é das Estrelas", "John Green", true));
-			storageService.saveBooks(loanService.listAllBooks());
-			System.out.println("5 livros de exemplo adicionados com sucesso!");
+		    System.out.println("Nenhum livro encontrado. Adicionando livros de exemplo...");
+		    loanService.addBook(new Book(1, "O Senhor dos Anéis", "J.R.R. Tolkien", "Fantasia", true));
+		    loanService.addBook(new Book(2, "1984", "George Orwell", "Ficção Científica", true));
+		    loanService.addBook(new Book(3, "Dom Casmurro", "Machado de Assis", "Literatura Brasileira", true));
+		    loanService.addBook(new Book(4, "O Pequeno Príncipe", "Antoine de Saint-Exupéry", "Infantil", true));
+		    loanService.addBook(new Book(5, "A Culpa é das Estrelas", "John Green", "Romance", true));
+		    storageService.saveBooks(loanService.listAllBooks());
+		    System.out.println("5 livros de exemplo adicionados com sucesso!");
 		} else {
 			loadedBooks.forEach(loanService::addBook);
 			System.out.println("Carregados " + loadedBooks.size() + " livros do arquivo.");
@@ -99,20 +99,22 @@ public class Program {
 				switch (option) {
 
 				case 1 -> {
-					try {
-						System.out.print("ID do livro: ");
-						int id = sc.nextInt();
-						sc.nextLine();
-						System.out.print("Título: ");
-						String title = sc.nextLine();
-						System.out.print("Autor: ");
-						String author = sc.nextLine();
-						loanService.addBook(new Book(id, title, author, true));
-						storageService.saveBooks(loanService.listAllBooks());
-						System.out.println("✅ Livro cadastrado com sucesso!");
-					} catch (DuplicateEntityException e) {
-						System.out.println("❌ " + e.getMessage());
-					}
+				    try {
+				        System.out.print("ID do livro: ");
+				        int id = sc.nextInt();
+				        sc.nextLine();
+				        System.out.print("Título: ");
+				        String title = sc.nextLine();
+				        System.out.print("Autor: ");
+				        String author = sc.nextLine();
+				        System.out.print("Gênero: ");  // NOVO
+				        String genre = sc.nextLine();
+				        loanService.addBook(new Book(id, title, author, genre, true));
+				        storageService.saveBooks(loanService.listAllBooks());
+				        System.out.println("✅ Livro cadastrado com sucesso!");
+				    } catch (DuplicateEntityException e) {
+				        System.out.println("❌ " + e.getMessage());
+				    }
 				}
 
 				case 2 -> {
