@@ -90,7 +90,9 @@ public class Program {
 				System.out.println("8. Listar todos os usuários");
 				System.out.println("9. Listar empréstimos atrasados");
 				System.out.println("10. Pesquisar livros");
-				System.out.println("11. Histórico de empréstimos por usuário"); // NOVO
+				System.out.println("11. Histórico de empréstimos por usuário");
+				System.out.println("12. Editar livro");  // NOVO
+				System.out.println("13. Excluir livro"); // NOVO
 				System.out.println("0. Sair");
 				System.out.print("Opção: ");
 				option = sc.nextInt();
@@ -324,6 +326,64 @@ public class Program {
 						}
 					}
 					System.out.println("=".repeat(60));
+				}
+				
+				case 12 -> {
+				    System.out.println("\n=== EDITAR LIVRO ===");
+				    
+				    // Mostra todos os livros para referência
+				    List<Book> allBooks = loanService.listAllBooks();
+				    if (allBooks.isEmpty()) {
+				        System.out.println("Nenhum livro cadastrado.");
+				        break;
+				    }
+				    
+				    System.out.println("\nLivros cadastrados:");
+				    allBooks.forEach(b -> System.out.println("  ID: " + b.getId() + " - " + b.getTitle()));
+				    
+				    System.out.print("\nDigite o ID do livro que deseja editar: ");
+				    int id = sc.nextInt();
+				    sc.nextLine();
+				    
+				    try {
+				        System.out.print("Novo título: ");
+				        String newTitle = sc.nextLine();
+				        System.out.print("Novo autor: ");
+				        String newAuthor = sc.nextLine();
+				        System.out.print("Novo gênero: ");
+				        String newGenre = sc.nextLine();
+				        
+				        loanService.updateBook(id, newTitle, newAuthor, newGenre);
+				        storageService.saveBooks(loanService.listAllBooks());
+				    } catch (BookNotFoundException e) {
+				        System.out.println("❌ " + e.getMessage());
+				    }
+				}
+
+				case 13 -> {
+				    System.out.println("\n=== EXCLUIR LIVRO ===");
+				    
+				    List<Book> allBooks = loanService.listAllBooks();
+				    if (allBooks.isEmpty()) {
+				        System.out.println("Nenhum livro cadastrado.");
+				        break;
+				    }
+				    
+				    System.out.println("\nLivros cadastrados:");
+				    allBooks.forEach(b -> System.out.println("  ID: " + b.getId() + " - " + b.getTitle()));
+				    
+				    System.out.print("\nDigite o ID do livro que deseja excluir: ");
+				    int id = sc.nextInt();
+				    sc.nextLine();
+				    
+				    try {
+				        loanService.deleteBook(id);
+				        storageService.saveBooks(loanService.listAllBooks());
+				    } catch (BookNotFoundException e) {
+				        System.out.println("❌ " + e.getMessage());
+				    } catch (RuntimeException e) {
+				        System.out.println(e.getMessage());
+				    }
 				}
 
 				case 0 -> System.out.println("Encerrando...");

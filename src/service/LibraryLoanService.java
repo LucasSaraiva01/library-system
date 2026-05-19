@@ -1,15 +1,21 @@
 package service;
 
-import entities.Book;
-import entities.Loan;
-import entities.User;
-import exceptions.*;
-import utils.EmailValidator;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import entities.Book;
+import entities.Loan;
+import entities.User;
+import exceptions.BookNotAvailableException;
+import exceptions.BookNotFoundException;
+import exceptions.DuplicateEntityException;
+import exceptions.InvalidEmailException;
+import exceptions.LoanAlreadyReturnedException;
+import exceptions.LoanNotFoundException;
+import exceptions.UserNotFoundException;
+import utils.EmailValidator;
 
 public class LibraryLoanService implements LoanService {
 
@@ -171,4 +177,38 @@ public class LibraryLoanService implements LoanService {
 		return loans.stream().filter(loan -> loan.getUser().getId().equals(userId))
 				.filter(loan -> loan.getReturnDate() == null).toList();
 	}
+	
+	@Override
+	public void updateBook(Integer id, String newTitle, String newAuthor, String newGenre) {
+	    Book book = books.stream()
+	            .filter(b -> b.getId().equals(id))
+	            .findFirst()
+	            .orElseThrow(() -> new BookNotFoundException(id));
+	    
+	    book.setTitle(newTitle);
+	    book.setAuthor(newAuthor);
+	    book.setGenre(newGenre);
+	    
+	    System.out.println("✅ Livro atualizado com sucesso!");
+	}
+	
+	@Override
+	public void deleteBook(Integer id) {
+	    Book book = books.stream()
+	            .filter(b -> b.getId().equals(id))
+	            .findFirst()
+	            .orElseThrow(() -> new BookNotFoundException(id));
+	    
+	    // Verifica se o livro está emprestado
+	    boolean isLoaned = loans.stream()
+	            .anyMatch(loan -> loan.getBook().getId().equals(id) && loan.getReturnDate() == null);
+	    
+	    if (isLoaned) {
+	        throw new RuntimeException("❌ Não é possível excluir o livro. Ele está emprestado no momento!");
+	    }
+	    
+	    books.remove(book);
+	    System.out.println("✅ Livro excluído com sucesso!");
+	}
+	
 }

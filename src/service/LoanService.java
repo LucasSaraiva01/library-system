@@ -24,7 +24,11 @@ public interface LoanService {
     List<Book> searchBooksByAuthor(String author);
     List<Book> searchBooks(String keyword);  // Busca em título E autor
     
- // NOVO
+    
     List<Loan> getLoansByUser(Integer userId);
     List<Loan> getActiveLoansByUser(Integer userId);  // Apenas empréstimos não devolvidos
+    
+ // Métodos para editar e excluir livros
+    void updateBook(Integer id, String newTitle, String newAuthor, String newGenre);
+    void deleteBook(Integer id);
 }
