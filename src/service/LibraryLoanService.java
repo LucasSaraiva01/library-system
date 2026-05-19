@@ -157,4 +157,70 @@ public class LibraryLoanService implements LoanService {
 	            .filter(Loan::isOverdue)
 	            .collect(java.util.stream.Collectors.toList());
 	}
+	
+	@Override
+	public List<Book> searchBooksByTitle(String title) {
+	    if (title == null || title.isBlank()) {
+	        return new ArrayList<>();
+	    }
+	    
+	    String searchTerm = title.toLowerCase().trim();
+	    return books.stream()
+	            .filter(book -> book.getTitle().toLowerCase().contains(searchTerm))
+	            .collect(java.util.stream.Collectors.toList());
+	}
+
+	@Override
+	public List<Book> searchBooksByAuthor(String author) {
+	    if (author == null || author.isBlank()) {
+	        return new ArrayList<>();
+	    }
+	    
+	    String searchTerm = author.toLowerCase().trim();
+	    return books.stream()
+	            .filter(book -> book.getAuthor().toLowerCase().contains(searchTerm))
+	            .collect(java.util.stream.Collectors.toList());
+	}
+
+	@Override
+	public List<Book> searchBooks(String keyword) {
+	    if (keyword == null || keyword.isBlank()) {
+	        return new ArrayList<>();
+	    }
+	    
+	    String searchTerm = keyword.toLowerCase().trim();
+	    List<Book> results = books.stream()
+	            .filter(book -> 
+	                book.getTitle().toLowerCase().contains(searchTerm) ||
+	                book.getAuthor().toLowerCase().contains(searchTerm)
+	            )
+	            .collect(java.util.stream.Collectors.toList());
+	    
+	    // Ordena por título
+	    Collections.sort(results);
+	    return results;
+	}
+	
+	@Override
+	public List<Loan> getLoansByUser(Integer userId) {
+	    if (userId == null) {
+	        return new ArrayList<>();
+	    }
+	    
+	    return loans.stream()
+	            .filter(loan -> loan.getUser().getId().equals(userId))
+	            .collect(java.util.stream.Collectors.toList());
+	}
+
+	@Override
+	public List<Loan> getActiveLoansByUser(Integer userId) {
+	    if (userId == null) {
+	        return new ArrayList<>();
+	    }
+	    
+	    return loans.stream()
+	            .filter(loan -> loan.getUser().getId().equals(userId))
+	            .filter(loan -> loan.getReturnDate() == null)  // Apenas não devolvidos
+	            .collect(java.util.stream.Collectors.toList());
+	}
 }
