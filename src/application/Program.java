@@ -8,6 +8,13 @@ import java.util.Scanner;
 import entities.Book;
 import entities.Loan;
 import entities.User;
+import exceptions.BookNotAvailableException;
+import exceptions.BookNotFoundException;
+import exceptions.DuplicateEntityException;
+import exceptions.InvalidEmailException;
+import exceptions.LoanAlreadyReturnedException;
+import exceptions.LoanNotFoundException;
+import exceptions.UserNotFoundException;
 import service.CsvStorageService;
 import service.LibraryLoanService;
 import service.LoanService;
@@ -55,7 +62,7 @@ public class Program {
 			loadedUsers.forEach(loanService::addUser);
 			System.out.println("Carregados " + loadedUsers.size() + " usuários do arquivo.");
 		}
-		
+
 		// Carrega empréstimos salvos (precisa das listas já carregadas)
 		List<Loan> loadedLoans = storageService.loadLoans(loanService.listAllBooks(), loanService.listAllUsers());
 		if (loadedLoans.isEmpty()) {
@@ -83,7 +90,7 @@ public class Program {
 				System.out.println("8. Listar todos os usuários");
 				System.out.println("9. Listar empréstimos atrasados");
 				System.out.println("10. Pesquisar livros");
-				System.out.println("11. Histórico de empréstimos por usuário");  // NOVO
+				System.out.println("11. Histórico de empréstimos por usuário"); // NOVO
 				System.out.println("0. Sair");
 				System.out.print("Opção: ");
 				option = sc.nextInt();
@@ -92,48 +99,67 @@ public class Program {
 				switch (option) {
 
 				case 1 -> {
-					System.out.print("ID do livro: ");
-					int id = sc.nextInt();
-					sc.nextLine();
-					System.out.print("Título: ");
-					String title = sc.nextLine();
-					System.out.print("Autor: ");
-					String author = sc.nextLine();
-					loanService.addBook(new Book(id, title, author, true));
-					storageService.saveBooks(loanService.listAllBooks());
-					System.out.println("Livro cadastrado com sucesso!");
+					try {
+						System.out.print("ID do livro: ");
+						int id = sc.nextInt();
+						sc.nextLine();
+						System.out.print("Título: ");
+						String title = sc.nextLine();
+						System.out.print("Autor: ");
+						String author = sc.nextLine();
+						loanService.addBook(new Book(id, title, author, true));
+						storageService.saveBooks(loanService.listAllBooks());
+						System.out.println("✅ Livro cadastrado com sucesso!");
+					} catch (DuplicateEntityException e) {
+						System.out.println("❌ " + e.getMessage());
+					}
 				}
 
 				case 2 -> {
-					System.out.print("ID do usuário: ");
-					int id = sc.nextInt();
-					sc.nextLine();
-					System.out.print("Nome: ");
-					String name = sc.nextLine();
-					System.out.print("Email: ");
-					String email = sc.nextLine();
-					loanService.addUser(new User(id, name, email));
-					storageService.saveUsers(loanService.listAllUsers()); // NOVO: salva após cadastrar
+					try {
+						System.out.print("ID do usuário: ");
+						int id = sc.nextInt();
+						sc.nextLine();
+						System.out.print("Nome: ");
+						String name = sc.nextLine();
+						System.out.print("Email: ");
+						String email = sc.nextLine();
+						loanService.addUser(new User(id, name, email));
+						storageService.saveUsers(loanService.listAllUsers());
+						System.out.println("✅ Usuário cadastrado com sucesso!");
+					} catch (DuplicateEntityException | InvalidEmailException e) {
+						System.out.println("❌ " + e.getMessage());
+					}
 				}
 
 				case 3 -> {
-					System.out.print("ID do livro: ");
-					int bookId = sc.nextInt();
-					System.out.print("ID do usuário: ");
-					int userId = sc.nextInt();
-					sc.nextLine();
-					loanService.borrowBook(bookId, userId);
-					storageService.saveBooks(loanService.listAllBooks());
-					storageService.saveLoans(loanService.listAllLoans());
+					try {
+						System.out.print("ID do livro: ");
+						int bookId = sc.nextInt();
+						System.out.print("ID do usuário: ");
+						int userId = sc.nextInt();
+						sc.nextLine();
+						loanService.borrowBook(bookId, userId);
+						storageService.saveBooks(loanService.listAllBooks());
+						storageService.saveLoans(loanService.listAllLoans());
+						System.out.println("✅ Empréstimo realizado com sucesso!");
+					} catch (BookNotFoundException | UserNotFoundException | BookNotAvailableException e) {
+						System.out.println("❌ " + e.getMessage());
+					}
 				}
 
 				case 4 -> {
-					System.out.print("ID do empréstimo: ");
-					int loanId = sc.nextInt();
-					sc.nextLine();
-					loanService.returnBook(loanId);
-					storageService.saveBooks(loanService.listAllBooks());
-					storageService.saveLoans(loanService.listAllLoans());
+					try {
+						System.out.print("ID do empréstimo: ");
+						int loanId = sc.nextInt();
+						sc.nextLine();
+						loanService.returnBook(loanId);
+						storageService.saveBooks(loanService.listAllBooks());
+						storageService.saveLoans(loanService.listAllLoans());
+						System.out.println("✅ Devolução realizada com sucesso!");
+					} catch (LoanNotFoundException | LoanAlreadyReturnedException e) {
+						System.out.println("❌ " + e.getMessage());
+					}
 				}
 
 				case 5 -> {
@@ -177,130 +203,126 @@ public class Program {
 				}
 
 				case 9 -> {
-				    List<Loan> overdueLoans = loanService.listOverdueLoans();
-				    if (overdueLoans.isEmpty()) {
-				        System.out.println("\n✅ Nenhum empréstimo atrasado!");
-				    } else {
-				        System.out.println("\n=== EMPRÉSTIMOS ATRASADOS ===");
-				        overdueLoans.forEach(System.out::println);
-				    }
+					List<Loan> overdueLoans = loanService.listOverdueLoans();
+					if (overdueLoans.isEmpty()) {
+						System.out.println("\n✅ Nenhum empréstimo atrasado!");
+					} else {
+						System.out.println("\n=== EMPRÉSTIMOS ATRASADOS ===");
+						overdueLoans.forEach(System.out::println);
+					}
 				}
-				
+
 				case 10 -> {
-				    System.out.println("\n=== PESQUISAR LIVROS ===");
-				    System.out.println("1. Pesquisar por título");
-				    System.out.println("2. Pesquisar por autor");
-				    System.out.println("3. Pesquisa geral (título ou autor)");
-				    System.out.print("Opção: ");
-				    int searchOption = sc.nextInt();
-				    sc.nextLine();
-				    
-				    List<Book> results = new ArrayList<>();
-				    String searchTerm = "";
-				    
-				    switch (searchOption) {
-				        case 1 -> {
-				            System.out.print("Digite o título (ou parte dele): ");
-				            searchTerm = sc.nextLine();
-				            results = loanService.searchBooksByTitle(searchTerm);
-				        }
-				        case 2 -> {
-				            System.out.print("Digite o autor (ou parte dele): ");
-				            searchTerm = sc.nextLine();
-				            results = loanService.searchBooksByAuthor(searchTerm);
-				        }
-				        case 3 -> {
-				            System.out.print("Digite a palavra-chave: ");
-				            searchTerm = sc.nextLine();
-				            results = loanService.searchBooks(searchTerm);
-				        }
-				        default -> {
-				            System.out.println("Opção inválida!");
-				            return;
-				        }
-				    }
-				    
-				    printSearchResults(results, searchTerm);
+					System.out.println("\n=== PESQUISAR LIVROS ===");
+					System.out.println("1. Pesquisar por título");
+					System.out.println("2. Pesquisar por autor");
+					System.out.println("3. Pesquisa geral (título ou autor)");
+					System.out.print("Opção: ");
+					int searchOption = sc.nextInt();
+					sc.nextLine();
+
+					List<Book> results = new ArrayList<>();
+					String searchTerm = "";
+
+					switch (searchOption) {
+					case 1 -> {
+						System.out.print("Digite o título (ou parte dele): ");
+						searchTerm = sc.nextLine();
+						results = loanService.searchBooksByTitle(searchTerm);
+					}
+					case 2 -> {
+						System.out.print("Digite o autor (ou parte dele): ");
+						searchTerm = sc.nextLine();
+						results = loanService.searchBooksByAuthor(searchTerm);
+					}
+					case 3 -> {
+						System.out.print("Digite a palavra-chave: ");
+						searchTerm = sc.nextLine();
+						results = loanService.searchBooks(searchTerm);
+					}
+					default -> {
+						System.out.println("Opção inválida!");
+						return;
+					}
+					}
+
+					printSearchResults(results, searchTerm);
 				}
-				
+
 				case 11 -> {
-				    System.out.println("\n=== HISTÓRICO DE EMPRÉSTIMOS POR USUÁRIO ===");
-				    
-				    List<User> users = loanService.listAllUsers();
-				    if (users.isEmpty()) {
-				        System.out.println("Nenhum usuário cadastrado.");
-				        break;
-				    }
-				    
-				    System.out.println("\nUsuários cadastrados:");
-				    users.forEach(u -> System.out.println("  ID: " + u.getId() + " - " + u.getName()));
-				    
-				    System.out.print("\nDigite o ID do usuário: ");
-				    int userId = sc.nextInt();
-				    sc.nextLine();
-				    
-				    User selectedUser = users.stream()
-				            .filter(u -> u.getId().equals(userId))
-				            .findFirst()
-				            .orElse(null);
-				    
-				    if (selectedUser == null) {
-				        System.out.println("Usuário não encontrado!");
-				        break;
-				    }
-				    
-				    // Submenu
-				    System.out.println("\n1. Histórico completo");
-				    System.out.println("2. Apenas empréstimos ativos");
-				    System.out.print("Opção: ");
-				    int historyOption = sc.nextInt();
-				    sc.nextLine();
-				    
-				    List<Loan> loansToShow;
-				    String title;
-				    
-				    if (historyOption == 2) {
-				        loansToShow = loanService.getActiveLoansByUser(userId);
-				        title = "EMPRÉSTIMOS ATIVOS";
-				    } else {
-				        loansToShow = loanService.getLoansByUser(userId);
-				        title = "HISTÓRICO COMPLETO";
-				    }
-				    
-				    System.out.println("\n📚 " + title + " - " + selectedUser.getName().toUpperCase());
-				    System.out.println("=".repeat(60));
-				    
-				    if (loansToShow.isEmpty()) {
-				        if (historyOption == 2) {
-				            System.out.println("Este usuário não possui empréstimos ativos.");
-				        } else {
-				            System.out.println("Este usuário não realizou nenhum empréstimo.");
-				        }
-				    } else {
-				        System.out.println("Total: " + loansToShow.size() + " empréstimo(s)");
-				        System.out.println();
-				        
-				        for (Loan loan : loansToShow) {
-				            System.out.printf("  📖 %s (ID: %d)%n", loan.getBook().getTitle(), loan.getId());
-				            System.out.printf("     Data: %s%n",
-				                loan.getLoanDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-				            
-				            if (loan.getReturnDate() == null) {
-				                System.out.printf("     Devolução prevista: %s%n",
-				                    loan.getExpectedReturnDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-				                if (loan.isOverdue()) {
-				                    System.out.printf("     ⚠️ ATRASADO! Dias: %d%n", loan.getDaysOverdue());
-				                }
-				            } else {
-				                System.out.printf("     Devolvido em: %s%n",
-				                    loan.getReturnDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-				            }
-				            System.out.println();
-				        }
-				    }
-				    System.out.println("=".repeat(60));
+					System.out.println("\n=== HISTÓRICO DE EMPRÉSTIMOS POR USUÁRIO ===");
+
+					List<User> users = loanService.listAllUsers();
+					if (users.isEmpty()) {
+						System.out.println("Nenhum usuário cadastrado.");
+						break;
+					}
+
+					System.out.println("\nUsuários cadastrados:");
+					users.forEach(u -> System.out.println("  ID: " + u.getId() + " - " + u.getName()));
+
+					System.out.print("\nDigite o ID do usuário: ");
+					int userId = sc.nextInt();
+					sc.nextLine();
+
+					User selectedUser = users.stream().filter(u -> u.getId().equals(userId)).findFirst().orElse(null);
+
+					if (selectedUser == null) {
+						System.out.println("Usuário não encontrado!");
+						break;
+					}
+
+					// Submenu
+					System.out.println("\n1. Histórico completo");
+					System.out.println("2. Apenas empréstimos ativos");
+					System.out.print("Opção: ");
+					int historyOption = sc.nextInt();
+					sc.nextLine();
+
+					List<Loan> loansToShow;
+					String title;
+
+					if (historyOption == 2) {
+						loansToShow = loanService.getActiveLoansByUser(userId);
+						title = "EMPRÉSTIMOS ATIVOS";
+					} else {
+						loansToShow = loanService.getLoansByUser(userId);
+						title = "HISTÓRICO COMPLETO";
+					}
+
+					System.out.println("\n📚 " + title + " - " + selectedUser.getName().toUpperCase());
+					System.out.println("=".repeat(60));
+
+					if (loansToShow.isEmpty()) {
+						if (historyOption == 2) {
+							System.out.println("Este usuário não possui empréstimos ativos.");
+						} else {
+							System.out.println("Este usuário não realizou nenhum empréstimo.");
+						}
+					} else {
+						System.out.println("Total: " + loansToShow.size() + " empréstimo(s)");
+						System.out.println();
+
+						for (Loan loan : loansToShow) {
+							System.out.printf("  📖 %s (ID: %d)%n", loan.getBook().getTitle(), loan.getId());
+							System.out.printf("     Data: %s%n", loan.getLoanDate()
+									.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+
+							if (loan.getReturnDate() == null) {
+								System.out.printf("     Devolução prevista: %s%n", loan.getExpectedReturnDate()
+										.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+								if (loan.isOverdue()) {
+									System.out.printf("     ⚠️ ATRASADO! Dias: %d%n", loan.getDaysOverdue());
+								}
+							} else {
+								System.out.printf("     Devolvido em: %s%n", loan.getReturnDate()
+										.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+							}
+							System.out.println();
+						}
+					}
+					System.out.println("=".repeat(60));
 				}
-				
 
 				case 0 -> System.out.println("Encerrando...");
 
@@ -309,26 +331,21 @@ public class Program {
 			}
 		}
 	}
-	
+
 	private static void printSearchResults(List<Book> results, String searchTerm) {
-	    if (results.isEmpty()) {
-	        System.out.println("Nenhum livro encontrado.");
-	        return;
-	    }
-	    
-	    System.out.println("\n🔍 Resultados da busca por: \"" + searchTerm + "\"");
-	    System.out.println("=".repeat(50));
-	    
-	    for (int i = 0; i < results.size(); i++) {
-	        Book book = results.get(i);
-	        System.out.printf("%d. [%d] %s - %s (%s)%n",
-	            i + 1,
-	            book.getId(),
-	            book.getTitle(),
-	            book.getAuthor(),
-	            book.isAvailable() ? "Disponível" : "Indisponível"
-	        );
-	    }
-	    System.out.println("=".repeat(50));
+		if (results.isEmpty()) {
+			System.out.println("Nenhum livro encontrado.");
+			return;
+		}
+
+		System.out.println("\n🔍 Resultados da busca por: \"" + searchTerm + "\"");
+		System.out.println("=".repeat(50));
+
+		for (int i = 0; i < results.size(); i++) {
+			Book book = results.get(i);
+			System.out.printf("%d. [%d] %s - %s (%s)%n", i + 1, book.getId(), book.getTitle(), book.getAuthor(),
+					book.isAvailable() ? "Disponível" : "Indisponível");
+		}
+		System.out.println("=".repeat(50));
 	}
 }

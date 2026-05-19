@@ -1,226 +1,202 @@
 package service;
 
+import entities.Book;
+import entities.Loan;
+import entities.User;
+import exceptions.*;
+import utils.EmailValidator;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import entities.Book;
-import entities.Loan;
-import entities.User;
-import utils.EmailValidator;
-
 public class LibraryLoanService implements LoanService {
 
-	private List<Book> books = new ArrayList<>();
-	private List<User> users = new ArrayList<>();
-	private List<Loan> loans = new ArrayList<>();
-	private final StorageService storageService;
+    private List<Book> books = new ArrayList<>();
+    private List<User> users = new ArrayList<>();
+    private List<Loan> loans = new ArrayList<>();
+    private final StorageService storageService;
 
-	public LibraryLoanService(StorageService storageService) {
-		this.storageService = storageService;
-	}
+    public LibraryLoanService(StorageService storageService) {
+        this.storageService = storageService;
+    }
 
-	@Override
-	public void addBook(Book book) {
+    @Override
+    public void addBook(Book book) {
+        boolean exists = books.stream()
+                .anyMatch(b -> b.getId().equals(book.getId()));
+        
+        if (exists) {
+            throw new DuplicateEntityException("Livro", book.getId());
+        }
+        
+        books.add(book);
+    }
 
-		// Verifica se já existe um livro com o mesmo ID
-		boolean exists = books.stream().anyMatch(b -> b.getId().equals(book.getId()));
+    @Override
+    public void addUser(User user) {
+        boolean idExists = users.stream()
+                .anyMatch(u -> u.getId().equals(user.getId()));
+        
+        if (idExists) {
+            throw new DuplicateEntityException("Usuário", user.getId());
+        }
+        
+        boolean emailExists = users.stream()
+                .anyMatch(u -> u.getEmail().equalsIgnoreCase(user.getEmail()));
+        
+        if (emailExists) {
+            throw new DuplicateEntityException("Usuário", user.getEmail());
+        }
+        
+        if (!EmailValidator.isValid(user.getEmail())) {
+            throw new InvalidEmailException(user.getEmail());
+        }
+        
+        users.add(user);
+    }
 
-		if (exists) {
-			System.out.println("ERRO: Já existe um livro com o ID " + book.getId() + "!");
-			return;
-		}
+    @Override
+    public void addLoan(Loan loan) {
+        loans.add(loan);
+    }
 
-		books.add(book);
-		System.out.println("Livro adicionado com sucesso!");
+    @Override
+    public void borrowBook(Integer bookId, Integer userId) {
+        Book book = books.stream()
+                .filter(b -> b.getId().equals(bookId))
+                .findFirst()
+                .orElseThrow(() -> new BookNotFoundException(bookId));
 
-	}
+        User user = users.stream()
+                .filter(u -> u.getId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new UserNotFoundException(userId));
+        
+        if (!book.isAvailable()) {
+            throw new BookNotAvailableException(book.getTitle());
+        }
 
-	@Override
-	public void addUser(User user) {
-		// Verifica se já existe um usuário com o mesmo ID
-		boolean idExists = users.stream().anyMatch(u -> u.getId().equals(user.getId()));
+        book.setAvailable(false);
+        
+        int maxId = loans.stream()
+                .mapToInt(Loan::getId)
+                .max()
+                .orElse(0);
+        int loanId = maxId + 1;
+        
+        loans.add(new Loan(loanId, book, user, LocalDate.now()));
+    }
 
-		if (idExists) {
-			System.out.println("ERRO: Já existe um usuário com o ID " + user.getId() + "!");
-			return;
-		}
+    @Override
+    public void returnBook(Integer loanId) {
+        Loan loan = loans.stream()
+                .filter(l -> l.getId().equals(loanId))
+                .findFirst()
+                .orElseThrow(() -> new LoanNotFoundException(loanId));
+        
+        if (loan.getReturnDate() != null) {
+            throw new LoanAlreadyReturnedException(loanId);
+        }
 
-		// Verifica se já existe um usuário com o mesmo email
-		boolean emailExists = users.stream().anyMatch(u -> u.getEmail().equalsIgnoreCase(user.getEmail()));
+        loan.getBook().setAvailable(true);
+        loan.setReturnDate(LocalDate.now());
+    }
 
-		if (emailExists) {
-			System.out.println("ERRO: Já existe um usuário com o email " + user.getEmail() + "!");
-			return;
-		}
+    @Override
+    public List<Book> listAvailableBooks() {
+        List<Book> available = books.stream()
+                .filter(Book::isAvailable)
+                .toList();
+        Collections.sort(available);
+        return available;
+    }
 
-		// Valida o formato do email
-		if (!EmailValidator.isValid(user.getEmail())) {
-			System.out.println("ERRO: Email inválido! O email deve conter @ e um domínio válido.");
-			System.out.println("      Exemplo: usuario@dominio.com");
-			return;
-		}
+    @Override
+    public List<Book> listAllBooks() {
+        return books;
+    }
 
-		users.add(user);
-		System.out.println("Usuário adicionado com sucesso!");
-	}
+    @Override
+    public List<User> listAllUsers() {
+        return users;
+    }
 
-	@Override
-	public void borrowBook(Integer bookId, Integer userId) {
+    @Override
+    public List<Loan> listAllLoans() {
+        return loans;
+    }
 
-	    Book book = books.stream()
-	            .filter(b -> b.getId().equals(bookId))
-	            .findFirst()
-	            .orElse(null);
+    @Override
+    public List<Loan> listOverdueLoans() {
+        return loans.stream()
+                .filter(Loan::isOverdue)
+                .toList();
+    }
 
-	    User user = users.stream()
-	            .filter(u -> u.getId().equals(userId))
-	            .findFirst()
-	            .orElse(null);
+    @Override
+    public List<Book> searchBooksByTitle(String title) {
+        if (title == null || title.isBlank()) {
+            return new ArrayList<>();
+        }
+        
+        String searchTerm = title.toLowerCase().trim();
+        return books.stream()
+                .filter(book -> book.getTitle().toLowerCase().contains(searchTerm))
+                .toList();
+    }
 
-	    if (book == null) {
-	        System.out.println("Livro não encontrado!");
-	        return;
-	    }
-	    if (user == null) {
-	        System.out.println("Usuário não encontrado!");
-	        return;
-	    }
-	    if (!book.isAvailable()) {
-	        System.out.println("Livro não está disponível!");
-	        return;
-	    }
+    @Override
+    public List<Book> searchBooksByAuthor(String author) {
+        if (author == null || author.isBlank()) {
+            return new ArrayList<>();
+        }
+        
+        String searchTerm = author.toLowerCase().trim();
+        return books.stream()
+                .filter(book -> book.getAuthor().toLowerCase().contains(searchTerm))
+                .toList();
+    }
 
-	    book.setAvailable(false);
-	    
-	    // Gera ID baseado no maior ID existente + 1
-	    int maxId = loans.stream()
-	            .mapToInt(Loan::getId)
-	            .max()
-	            .orElse(0);
-	    int loanId = maxId + 1;
-	    
-	    loans.add(new Loan(loanId, book, user, LocalDate.now()));
-	    System.out.println("Empréstimo realizado com sucesso!");
-	}
+    @Override
+    public List<Book> searchBooks(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return new ArrayList<>();
+        }
+        
+        String searchTerm = keyword.toLowerCase().trim();
+        List<Book> results = books.stream()
+                .filter(book -> 
+                    book.getTitle().toLowerCase().contains(searchTerm) ||
+                    book.getAuthor().toLowerCase().contains(searchTerm)
+                )
+                .toList();
+        
+        Collections.sort(results);
+        return results;
+    }
 
-	@Override
-	public void returnBook(Integer loanId) {
+    @Override
+    public List<Loan> getLoansByUser(Integer userId) {
+        if (userId == null) {
+            return new ArrayList<>();
+        }
+        
+        return loans.stream()
+                .filter(loan -> loan.getUser().getId().equals(userId))
+                .toList();
+    }
 
-		Loan loan = loans.stream().filter(l -> l.getId().equals(loanId)).findFirst().orElse(null);
-
-		if (loan == null) {
-			System.out.println("Empréstimo não encontrado!");
-			return;
-		}
-		if (loan.getReturnDate() != null) {
-			System.out.println("Livro já foi devolvido!");
-			return;
-		}
-
-		loan.getBook().setAvailable(true);
-		loan.setReturnDate(LocalDate.now());
-		System.out.println("Devolução realizada com sucesso!");
-	}
-
-	@Override
-	public List<Book> listAvailableBooks() {
-		List<Book> available = books.stream().filter(Book::isAvailable).collect(java.util.stream.Collectors.toList());
-		Collections.sort(available);
-		return available;
-	}
-
-	@Override
-	public List<Loan> listAllLoans() {
-		return loans;
-	}
-	
-	@Override
-	public List<Book> listAllBooks() {
-	    return books;
-	}
-	
-	@Override
-	public List<User> listAllUsers() {
-	    return users;
-	}
-	
-	@Override
-	public void addLoan(Loan loan) {
-	    loans.add(loan);
-	}
-	
-	@Override
-	public List<Loan> listOverdueLoans() {
-	    return loans.stream()
-	            .filter(Loan::isOverdue)
-	            .collect(java.util.stream.Collectors.toList());
-	}
-	
-	@Override
-	public List<Book> searchBooksByTitle(String title) {
-	    if (title == null || title.isBlank()) {
-	        return new ArrayList<>();
-	    }
-	    
-	    String searchTerm = title.toLowerCase().trim();
-	    return books.stream()
-	            .filter(book -> book.getTitle().toLowerCase().contains(searchTerm))
-	            .collect(java.util.stream.Collectors.toList());
-	}
-
-	@Override
-	public List<Book> searchBooksByAuthor(String author) {
-	    if (author == null || author.isBlank()) {
-	        return new ArrayList<>();
-	    }
-	    
-	    String searchTerm = author.toLowerCase().trim();
-	    return books.stream()
-	            .filter(book -> book.getAuthor().toLowerCase().contains(searchTerm))
-	            .collect(java.util.stream.Collectors.toList());
-	}
-
-	@Override
-	public List<Book> searchBooks(String keyword) {
-	    if (keyword == null || keyword.isBlank()) {
-	        return new ArrayList<>();
-	    }
-	    
-	    String searchTerm = keyword.toLowerCase().trim();
-	    List<Book> results = books.stream()
-	            .filter(book -> 
-	                book.getTitle().toLowerCase().contains(searchTerm) ||
-	                book.getAuthor().toLowerCase().contains(searchTerm)
-	            )
-	            .collect(java.util.stream.Collectors.toList());
-	    
-	    // Ordena por título
-	    Collections.sort(results);
-	    return results;
-	}
-	
-	@Override
-	public List<Loan> getLoansByUser(Integer userId) {
-	    if (userId == null) {
-	        return new ArrayList<>();
-	    }
-	    
-	    return loans.stream()
-	            .filter(loan -> loan.getUser().getId().equals(userId))
-	            .collect(java.util.stream.Collectors.toList());
-	}
-
-	@Override
-	public List<Loan> getActiveLoansByUser(Integer userId) {
-	    if (userId == null) {
-	        return new ArrayList<>();
-	    }
-	    
-	    return loans.stream()
-	            .filter(loan -> loan.getUser().getId().equals(userId))
-	            .filter(loan -> loan.getReturnDate() == null)  // Apenas não devolvidos
-	            .collect(java.util.stream.Collectors.toList());
-	}
+    @Override
+    public List<Loan> getActiveLoansByUser(Integer userId) {
+        if (userId == null) {
+            return new ArrayList<>();
+        }
+        
+        return loans.stream()
+                .filter(loan -> loan.getUser().getId().equals(userId))
+                .filter(loan -> loan.getReturnDate() == null)
+                .toList();
+    }
 }
